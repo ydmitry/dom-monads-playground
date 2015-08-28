@@ -64,23 +64,31 @@
 	
 	var _ramdaSrcLift2 = _interopRequireDefault(_ramdaSrcLift);
 	
-	var _ramdaSrcProp = __webpack_require__(31);
+	var _ramdaSrcTap = __webpack_require__(31);
+	
+	var _ramdaSrcTap2 = _interopRequireDefault(_ramdaSrcTap);
+	
+	var _ramdaSrcProp = __webpack_require__(32);
 	
 	var _ramdaSrcProp2 = _interopRequireDefault(_ramdaSrcProp);
 	
-	var _ramdaSrcCompose = __webpack_require__(32);
+	var _ramdaSrcCompose = __webpack_require__(33);
 	
 	var _ramdaSrcCompose2 = _interopRequireDefault(_ramdaSrcCompose);
 	
-	var _baconjs = __webpack_require__(34);
+	var _ramdaSrcFlip = __webpack_require__(47);
+	
+	var _ramdaSrcFlip2 = _interopRequireDefault(_ramdaSrcFlip);
+	
+	var _baconjs = __webpack_require__(35);
 	
 	var _baconjs2 = _interopRequireDefault(_baconjs);
 	
-	var _dataFuture = __webpack_require__(38);
+	var _dataFuture = __webpack_require__(39);
 	
 	var _dataFuture2 = _interopRequireDefault(_dataFuture);
 	
-	var _io = __webpack_require__(41);
+	var _io = __webpack_require__(42);
 	
 	(0, _io.extendFn)();
 	
@@ -96,14 +104,28 @@
 	var fork = (0, _ramdaSrcCurry2['default'])(function (f, future) {
 	    return future.fork(log, f);
 	});
+	var fmap = (0, _ramdaSrcCurry2['default'])(function (f, functor) {
+	    return functor.map(f);
+	});
+	
+	var chain = (0, _ramdaSrcCurry2['default'])(function (f, functor) {
+	    return functor.chain(f);
+	});
 	
 	var setHtml = (0, _ramdaSrcCurry2['default'])(function (el, x) {
 	    el.innerHtml = x;
 	    return el;
 	});
 	
-	var setColor = (0, _ramdaSrcCurry2['default'])(function (el) {
-	    el.style.backgroundColor = getRandomColor();
+	var setBackgroundColor = (0, _ramdaSrcCurry2['default'])(function (el, color) {
+	    log('setBackgroundColor');
+	    el.style.backgroundColor = color;
+	    return el;
+	});
+	
+	var setColor = (0, _ramdaSrcCurry2['default'])(function (el, color) {
+	    log('setColor');
+	    el.style.color = color;
 	    return el;
 	});
 	
@@ -117,10 +139,26 @@
 	
 	var el = document.getElementById('container');
 	
-	clickStream(el).onValue((0, _ramdaSrcCompose2['default'])(_io.runIO, setColor.toIO(el)));
+	var setBgColorAndContrastColor = (0, _ramdaSrcCurry2['default'])(function (el) {
+	    var setColorEl = setColor(el).toIO();
+	    var setBackgroundColorEl = (0, _ramdaSrcTap2['default'])(setBackgroundColor(el)).toIO();
 	
-	//let run = addEventListenerClickEl;
-	//console.log(run(el));
+	    return (0, _ramdaSrcCompose2['default'])(chain(setColorEl), log, (0, _ramdaSrcMap2['default'])(contrastColor), log, setBackgroundColorEl);
+	});
+	
+	var randCol = (0, _ramdaSrcCompose2['default'])(_io.runIO, log, setBgColorAndContrastColor(el), log, getRandomColor);
+	
+	clickStream(el).onValue(randCol);
+	
+	/*clickStream(el).onValue(
+	    compose(
+	        runIO,
+	        compose(setColor(el).toIO(), contrastColor),
+	        runIO,
+	        tap(setBackgroundColor(el)).toIO(),
+	        getRandomColor
+	    )
+	);*/
 	
 	function getRandomColor() {
 	    var letters = '0123456789ABCDEF'.split('');
@@ -129,6 +167,22 @@
 	        color += letters[Math.floor(Math.random() * 16)];
 	    }
 	    return color;
+	}
+	
+	function contrastColor(hexColor) {
+	    return hexdec(hexColor) > 0xffffff / 2 ? '#000000' : '#FFFFFF';
+	}
+	
+	function hexdec(hex_string) {
+	    //  discuss at: http://phpjs.org/functions/hexdec/
+	    // original by: Philippe Baumann
+	    //   example 1: hexdec('that');
+	    //   returns 1: 10
+	    //   example 2: hexdec('a0');
+	    //   returns 2: 160
+	
+	    hex_string = (hex_string + '').replace(/[^a-f0-9]/gi, '');
+	    return parseInt(hex_string, 16);
 	}
 
 /***/ },
@@ -1262,6 +1316,35 @@
 	var _curry2 = __webpack_require__(5);
 	
 	/**
+	 * Runs the given function with the supplied object, then returns the object.
+	 *
+	 * @func
+	 * @memberOf R
+	 * @category Function
+	 * @sig (a -> *) -> a -> a
+	 * @param {Function} fn The function to call with `x`. The return value of `fn` will be thrown away.
+	 * @param {*} x
+	 * @return {*} `x`.
+	 * @example
+	 *
+	 *      var sayX = function(x) { console.log('x is ' + x); };
+	 *      R.tap(sayX, 100); //=> 100
+	 *      //-> 'x is 100'
+	 */
+	module.exports = _curry2(function tap(fn, x) {
+	  fn(x);
+	  return x;
+	});
+
+/***/ },
+/* 32 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	var _curry2 = __webpack_require__(5);
+	
+	/**
 	 * Returns a function that when supplied an object returns the indicated property of that object, if it exists.
 	 *
 	 * @func
@@ -1281,13 +1364,13 @@
 	});
 
 /***/ },
-/* 32 */
+/* 33 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	var pipe = __webpack_require__(7);
-	var reverse = __webpack_require__(33);
+	var reverse = __webpack_require__(34);
 	
 	/**
 	 * Performs right-to-left function composition. The rightmost function may have
@@ -1314,7 +1397,7 @@
 	};
 
 /***/ },
-/* 33 */
+/* 34 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1344,7 +1427,7 @@
 	});
 
 /***/ },
-/* 34 */
+/* 35 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(global, module) {"use strict";
@@ -4871,7 +4954,7 @@
 	    return this.last().firstToPromise(PromiseCtr);
 	  };
 	
-	  if ("function" !== "undefined" && __webpack_require__(36) !== null && __webpack_require__(37) != null) {
+	  if ("function" !== "undefined" && __webpack_require__(37) !== null && __webpack_require__(38) != null) {
 	    !(__WEBPACK_AMD_DEFINE_ARRAY__ = [], __WEBPACK_AMD_DEFINE_RESULT__ = function () {
 	      return Bacon;
 	    }.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
@@ -4883,10 +4966,10 @@
 	      this.Bacon = Bacon;
 	    }
 	}).call(undefined);
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(35)(module)))
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(36)(module)))
 
 /***/ },
-/* 35 */
+/* 36 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -4903,14 +4986,14 @@
 	};
 
 /***/ },
-/* 36 */
+/* 37 */
 /***/ function(module, exports) {
 
 	module.exports = function() { throw new Error("define cannot be used indirect"); };
 
 
 /***/ },
-/* 37 */
+/* 38 */
 /***/ function(module, exports) {
 
 	/* WEBPACK VAR INJECTION */(function(__webpack_amd_options__) {module.exports = __webpack_amd_options__;
@@ -4918,7 +5001,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, {}))
 
 /***/ },
-/* 38 */
+/* 39 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Copyright (c) 2013-2014 Quildreen Motta <quildreen@gmail.com>
@@ -4944,10 +5027,10 @@
 	
 	'use strict';
 	
-	module.exports = __webpack_require__(39);
+	module.exports = __webpack_require__(40);
 
 /***/ },
-/* 39 */
+/* 40 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Copyright (c) 2013-2014 Quildreen Motta <quildreen@gmail.com>
@@ -4979,7 +5062,7 @@
 	module.exports = Future;
 	
 	// -- Dependencies -----------------------------------------------------
-	var memoisedFork = __webpack_require__(40).memoisedFork;
+	var memoisedFork = __webpack_require__(41).memoisedFork;
 	
 	// -- Implementation ---------------------------------------------------
 	
@@ -5254,7 +5337,7 @@
 	};
 
 /***/ },
-/* 40 */
+/* 41 */
 /***/ function(module, exports) {
 
 	// Copyright (c) 2013-2014 Quildreen Motta <quildreen@gmail.com>
@@ -5345,7 +5428,7 @@
 	}
 
 /***/ },
-/* 41 */
+/* 42 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -5406,6 +5489,49 @@
 	    };
 	};
 	exports.extendFn = extendFn;
+
+/***/ },
+/* 43 */,
+/* 44 */,
+/* 45 */,
+/* 46 */,
+/* 47 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	var _curry1 = __webpack_require__(2);
+	var _slice = __webpack_require__(18);
+	var curry = __webpack_require__(1);
+	
+	/**
+	 * Returns a new function much like the supplied one, except that the first two arguments'
+	 * order is reversed.
+	 *
+	 * @func
+	 * @memberOf R
+	 * @category Function
+	 * @sig (a -> b -> c -> ... -> z) -> (b -> a -> c -> ... -> z)
+	 * @param {Function} fn The function to invoke with its first two parameters reversed.
+	 * @return {*} The result of invoking `fn` with its first two parameters' order reversed.
+	 * @example
+	 *
+	 *      var mergeThree = function(a, b, c) {
+	 *        return ([]).concat(a, b, c);
+	 *      };
+	 *
+	 *      mergeThree(1, 2, 3); //=> [1, 2, 3]
+	 *
+	 *      R.flip(mergeThree)(1, 2, 3); //=> [2, 1, 3]
+	 */
+	module.exports = _curry1(function flip(fn) {
+	  return curry(function (a, b) {
+	    var args = _slice(arguments);
+	    args[0] = b;
+	    args[1] = a;
+	    return fn.apply(this, args);
+	  });
+	});
 
 /***/ }
 /******/ ]);
