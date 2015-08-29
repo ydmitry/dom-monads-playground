@@ -8,9 +8,10 @@ import compose from 'ramda/src/compose';
 import flip from 'ramda/src/flip';
 import Bacon from 'baconjs';
 import Future from 'data.future';
-import {IO, runIO, extendFn} from 'io';
+import {IO, runIO, extendFn as extendFnIO} from 'io';
+import {getRandomColor, contrastColor} from './colors';
 
-extendFn();
+extendFnIO();
 
 // HELPERS
 
@@ -18,10 +19,13 @@ const listen = curry(function (event, target) {
     return Bacon.fromEventTarget(target, event);
 });
 
-const log = function(x) { console.log(x); return x; };
-const fork = curry(function(f, future) { return future.fork(log, f); });
-const fmap = curry(function(f, functor) {
-    return functor.map(f);
+const log = function(x) {
+    console.log(x);
+    return x;
+};
+
+const fork = curry(function(f, future) {
+    return future.fork(log, f);
 });
 
 const chain = curry(function(f, functor) {
@@ -34,13 +38,11 @@ const setHtml = curry(function(el, x) {
 });
 
 const setBackgroundColor = curry(function(el, color) {
-    log('setBackgroundColor');
     el.style.backgroundColor = color;
     return el;
 });
 
 const setColor = curry(function(el, color) {
-    log('setColor');
     el.style.color = color;
     return el;
 });
@@ -51,70 +53,31 @@ const eventTarget = prop('target');
 
 const clickStream = compose(map(eventTarget), listen('click'));
 
-
-// UNPURE
-
-let el = document.getElementById('container');
-
-let setBgColorAndContrastColor = curry(function(el) {
+const setBgColorAndContrastColor = curry(function(el, color) {
     let setColorEl = setColor(el).toIO();
     let setBackgroundColorEl = tap(setBackgroundColor(el)).toIO();
 
     return compose(
         chain(setColorEl),
-        log,
         map(contrastColor),
-        log,
         setBackgroundColorEl
-    );
+    )(color);
 });
+
+const setRandomBgColorAndContrastColor = function(el) {
+    return setBgColorAndContrastColor(el, getRandomColor());
+};
+
+// UNPURE
+
+let el = document.getElementById('container');
 
 let randCol = compose(
     runIO,
-    log,
-    setBgColorAndContrastColor(el),
-    log,
-    getRandomColor
+    setRandomBgColorAndContrastColor
 );
 
 clickStream(el).onValue(
     randCol
 );
 
-/*clickStream(el).onValue(
-    compose(
-        runIO,
-        compose(setColor(el).toIO(), contrastColor),
-        runIO,
-        tap(setBackgroundColor(el)).toIO(),
-        getRandomColor
-    )
-);*/
-
-
-function getRandomColor() {
-    var letters = '0123456789ABCDEF'.split('');
-    var color = '#';
-    for (var i = 0; i < 6; i++ ) {
-        color += letters[Math.floor(Math.random() * 16)];
-    }
-    return color;
-}
-
-function contrastColor(hexColor)
-{
-    return (hexdec(hexColor) > 0xffffff/2) ? '#000000' : '#FFFFFF';
-}
-
-function hexdec(hex_string) {
-    //  discuss at: http://phpjs.org/functions/hexdec/
-    // original by: Philippe Baumann
-    //   example 1: hexdec('that');
-    //   returns 1: 10
-    //   example 2: hexdec('a0');
-    //   returns 2: 160
-
-    hex_string = (hex_string + '')
-        .replace(/[^a-f0-9]/gi, '');
-    return parseInt(hex_string, 16);
-}
