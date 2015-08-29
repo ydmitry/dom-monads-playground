@@ -49,7 +49,7 @@ const setColor = curry(function(el, color) {
 
 // PURE
 
-const eventTarget = prop('target');
+const eventTarget = prop('currentTarget');
 
 const clickStream = compose(map(eventTarget), listen('click'));
 

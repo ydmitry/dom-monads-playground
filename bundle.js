@@ -130,7 +130,7 @@
 	
 	// PURE
 	
-	var eventTarget = (0, _ramdaSrcProp2['default'])('target');
+	var eventTarget = (0, _ramdaSrcProp2['default'])('currentTarget');
 	
 	var clickStream = (0, _ramdaSrcCompose2['default'])((0, _ramdaSrcMap2['default'])(eventTarget), listen('click'));
 	
