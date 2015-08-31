@@ -33,34 +33,15 @@ const mergeEvent = curry(function(currentEvent, event) {
 
 const drag = curry(function(el, start, move, finish) {
 
-    let a, b;
+    const mergeCurrentEvent = mergeEvent(event);
 
-    const fin = curry(function mouseup(mousemove, event) {
-        finish(event);
+    const mousemove = compose(move, mergeCurrentEvent);
+    const mouseup = compose(finish, mergeCurrentEvent);
 
-        a();
-        b();
-        //document.removeEventListener('mousemove', mousemove);
-        //document.removeEventListener('mouseup', mouseup);
-    });
+    mousemoveStream(document.body).map(mousemove);
+    mouseupStream(document.body).map(mouseup);
 
-    const mousedown = function(event) {
-
-        const mergeCurrentEvent = mergeEvent(event);
-
-        const mousemove = compose(move, mergeCurrentEvent);
-        const mouseup = compose(fin(mousemove), mergeCurrentEvent);
-
-        // Call start
-        start(event);
-
-        a = mousemoveStream(el).onValue(mousemove);
-        b = mouseupStream(el).onValue(mouseup);
-
-        return event;
-    };
-
-    return mousedownStream(el).onValue(mousedown);
+    return mousedownStream(el).map().onValue(start);
 });
 
 export default drag;
