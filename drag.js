@@ -29,7 +29,45 @@ const mergeEvent = curry(function(currentEvent, event) {
     return event;
 });
 
+function xyFromEvent(v){
+    return {x: v.clientX, y: v.clientY}
+}
+
+function getDelta(t){
+    var a = t[1];
+    var b = t[0];
+    return {x: a.x-b.x, y: a.y-b.y};
+}
+
+function add(p1, p2) {
+    return {x: p1.x + p2.x, y: p1.y + p2.y};
+}
+
+
 // Drag
+
+const f = function(el) {
+    let body = document.body;
+    var startDrag = mousedownStream(el);
+    var endDrag = mouseupStream(body);
+
+    var draggingDeltas = startDrag.flatMap(function() {
+        return mousemoveStream(body)
+            .map(xyFromEvent)
+            .slidingWindow(2, 2)
+            .map(getDelta)
+            .takeUntil(endDrag)
+    });
+
+    var blockPosition = draggingDeltas.scan({x: 0, y: 0}, add);
+
+    blockPosition.onValue(function(pos) {
+        block.css({
+            top  : pos.y + "px",
+            left : pos.x + "px"
+        });
+    });
+};
 
 const drag = curry(function(el, start, move, finish) {
 
@@ -40,7 +78,6 @@ const drag = curry(function(el, start, move, finish) {
 
     mousemoveStream(document.body).map(mousemove);
     mouseupStream(document.body).map(mouseup);
-
     return mousedownStream(el).map().onValue(start);
 });
 
