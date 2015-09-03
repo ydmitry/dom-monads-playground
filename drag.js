@@ -50,7 +50,7 @@ function add(p1, p2) {
 // Drag
 
 const drag = function(el) {
-    let body = document.body;
+    let body = document;
     let startDrag = mousedownStream(el);
     let endDrag = mouseupStream(body);
 
