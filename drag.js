@@ -18,6 +18,12 @@ const mousedownStream = listen('mousedown');
 const mousemoveStream = listen('mousemove');
 const mouseupStream = listen('mouseup');
 
+const detectSelectEventType = function() {
+    return "onselectstart" in document.createElement("div") ? "selectstart" : "mousedown";
+};
+
+const selectStream = listen(detectSelectEventType());
+
 const log = function(x) {
     console.log(x);
     return x;
@@ -50,17 +56,22 @@ function add(p1, p2) {
 // Drag
 
 const drag = function(el) {
-    let body = document;
+    let doc = document;
     let startDrag = mousedownStream(el);
-    let endDrag = mouseupStream(body);
+    let endDrag = mouseupStream(doc).log();
+
+
 
     let draggingDeltas = startDrag.flatMap(function() {
-        return mousemoveStream(body)
+        let moveDrag = mousemoveStream(doc);
+
+        return moveDrag
             .map(xyFromEvent)
             .slidingWindow(2, 2)
             .map(getDelta)
-            .takeUntil(endDrag)
+            .takeUntil(endDrag);
     });
+
 
     return draggingDeltas.scan({
         x: 0,
