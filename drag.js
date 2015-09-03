@@ -46,12 +46,12 @@ function add(p1, p2) {
 
 // Drag
 
-const f = function(el) {
+const drag = function(el) {
     let body = document.body;
-    var startDrag = mousedownStream(el);
-    var endDrag = mouseupStream(body);
+    let startDrag = mousedownStream(el);
+    let endDrag = mouseupStream(body);
 
-    var draggingDeltas = startDrag.flatMap(function() {
+    let draggingDeltas = startDrag.flatMap(function() {
         return mousemoveStream(body)
             .map(xyFromEvent)
             .slidingWindow(2, 2)
@@ -59,26 +59,7 @@ const f = function(el) {
             .takeUntil(endDrag)
     });
 
-    var blockPosition = draggingDeltas.scan({x: 0, y: 0}, add);
-
-    blockPosition.onValue(function(pos) {
-        block.css({
-            top  : pos.y + "px",
-            left : pos.x + "px"
-        });
-    });
+    return draggingDeltas.scan({x: 0, y: 0}, add);
 };
-
-const drag = curry(function(el, start, move, finish) {
-
-    const mergeCurrentEvent = mergeEvent(event);
-
-    const mousemove = compose(move, mergeCurrentEvent);
-    const mouseup = compose(finish, mergeCurrentEvent);
-
-    mousemoveStream(document.body).map(mousemove);
-    mouseupStream(document.body).map(mouseup);
-    return mousedownStream(el).map().onValue(start);
-});
 
 export default drag;

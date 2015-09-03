@@ -58,7 +58,10 @@ const setLeft = curry(function(el, left) {
     return el;
 });
 
-
+const setTop = curry(function(el, top) {
+    el.style.top = top + 'px';
+    return el;
+});
 
 // PURE
 
@@ -102,33 +105,11 @@ clickStream(el).onValue(
 
 // drag element
 
+let setPosition = curry(function(el, pos) {
+    setLeft(el, pos.x);
+    setTop(el, pos.y);
+});
 
-const dragStart = function(event) {
-    console.log('start', event);
-};
-
-const dragMoveImp = function(event) {
-    let {pageX, target} = event.currentEvent;
-    let left = parseInt(target.style.left) || 0;
-    let newPageX = event.pageX;
-
-    console.log('dmi', event);
-
-    target.style.left = (left + newPageX - pageX) + 'px';
-
-    return event;
-};
-
-const dragFinish = function(event) {
-    console.log('finish', event);
-    return event;
-};
-
-const setLeftEventTarget = compose(setLeft, prop('currentTarget'));
-
-const dragMove = function(event) {
-    let propPageX = prop('pageX');
-    return setLeftEventTarget(event)(propPageX);
-};
+drag(el).onValue(setPosition(el));
 
 //drag(el, dragStart, dragMoveImp, dragFinish);
