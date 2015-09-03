@@ -14,7 +14,6 @@ const listen = curry(function(event, target) {
     return Bacon.fromEventTarget(target, event);
 });
 
-const propCurrentTarget = prop('currentTarget');
 const mousedownStream = listen('mousedown');
 const mousemoveStream = listen('mousemove');
 const mouseupStream = listen('mouseup');
@@ -24,23 +23,27 @@ const log = function(x) {
     return x;
 };
 
-const mergeEvent = curry(function(currentEvent, event) {
-    event.currentEvent = currentEvent;
-    return event;
-});
 
-function xyFromEvent(v){
-    return {x: v.clientX, y: v.clientY}
+function xyFromEvent(v) {
+    return {
+        x: v.clientX,
+        y: v.clientY
+    };
 }
 
-function getDelta(t){
-    var a = t[1];
-    var b = t[0];
-    return {x: a.x-b.x, y: a.y-b.y};
+function getDelta(t) {
+    let [b, a] = t;
+    return {
+        x: a.x - b.x,
+        y: a.y - b.y
+    };
 }
 
 function add(p1, p2) {
-    return {x: p1.x + p2.x, y: p1.y + p2.y};
+    return {
+        x: p1.x + p2.x,
+        y: p1.y + p2.y
+    };
 }
 
 
@@ -59,7 +62,10 @@ const drag = function(el) {
             .takeUntil(endDrag)
     });
 
-    return draggingDeltas.scan({x: 0, y: 0}, add);
+    return draggingDeltas.scan({
+        x: 0,
+        y: 0
+    }, add);
 };
 
 export default drag;
